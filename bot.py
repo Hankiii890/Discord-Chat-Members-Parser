@@ -1,14 +1,11 @@
 import discord
-from discord.ext import tasks
 from database import connect_to_db
 from dotenv import load_dotenv
-import asyncio
 import os
 
 load_dotenv()
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-
 
 intents = discord.Intents.default()
 intents.members = True
@@ -16,9 +13,9 @@ intents.members = True
 client = discord.Client(intents=intents)
 
 
-# Функция парсинга участников чата discord
 async def parse_participants(projects_name, discord_link):
-    print(f'Пошёл парсинг!')
+    """Функция парсинга участников чата discord"""
+    print(f"Начало парсинга!")
     invite = await client.fetch_invite(discord_link)
     guild_id = invite.guild.id
     guild = client.get_guild(guild_id)
@@ -41,8 +38,8 @@ async def parse_participants(projects_name, discord_link):
     cur.close()
 
 
-# Функция парсера каждого проекта
 async def parse_projects():
+    """Функция парсера каждого проекта"""
     connect = connect_to_db()
     cur = connect.cursor()
     cur.execute("SELECT projects_name, discord_link FROM projects")
@@ -54,15 +51,15 @@ async def parse_projects():
 
 @client.event
 async def on_ready():
+    """Информируем об успешном подключение бота!"""
     print("Бот успешно запущен и подключён к серверу Discord!")
 
 
-# Запуск парсинга
 @client.event
 async def on_message(message):
+    """Запуск парсинга"""
     if message.content == '!start_parsing':
         await parse_projects()
-
     client.loop.create_task(parse_projects())
 
 
