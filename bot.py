@@ -1,4 +1,5 @@
 import discord
+from discord.ext import commands
 from database import connect_to_db
 from dotenv import load_dotenv
 import os
@@ -8,17 +9,25 @@ load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 intents = discord.Intents.default()
+intents.messages = True
+intents.message_content = True
 intents.members = True
 
-client = discord.Client(intents=intents)
+bot = commands.Bot(command_prefix='!', intents=intents)
+
+
+@bot.event
+async def on_ready():
+    """Информируем об успешном подключение бота!"""
+    print("Бот успешно запущен и подключён к серверу Discord!")
 
 
 async def parse_participants(projects_name, discord_link):
     """Функция парсинга участников чата discord"""
     print(f"Начало парсинга!")
-    invite = await client.fetch_invite(discord_link)
+    invite = await bot.fetch_invite(discord_link)
     guild_id = invite.guild.id
-    guild = client.get_guild(guild_id)
+    guild = bot.get_guild(guild_id)
 
     # Список членов чата
     members = []
@@ -33,7 +42,8 @@ async def parse_participants(projects_name, discord_link):
 
     # Добавляем данные
     for value in members:
-        cur.execute("INSERT INTO result (projects_name, login, role) VALUES (%s, %s, %s)", (projects_name, value.name, value.top_role.name))
+        cur.execute("INSERT INTO result (projects_name, login, role) VALUES (%s, %s, %s)",
+                    (projects_name, value.name, value.top_role.name))
     connect.commit()
     cur.close()
 
@@ -49,18 +59,18 @@ async def parse_projects():
     cur.close()
 
 
-@client.event
-async def on_ready():
-    """Информируем об успешном подключение бота!"""
-    print("Бот успешно запущен и подключён к серверу Discord!")
+@bot.command()
+async def start_parsing(ctx):
+    await parse_projects()
 
 
-@client.event
-async def on_message(message):
-    """Запуск парсинга"""
-    if message.content == '!start_parsing':
-        await parse_projects()
-    client.loop.create_task(parse_projects())
+@bot.command()
+async def help_commands(ctx):
+    help_message = """
+    Список доступных команд:
+    !start_parsing - запустить парсер
+    """
+    await ctx.send(help_message)
 
 
-client.run(DISCORD_TOKEN)
+bot.run(DISCORD_TOKEN)
