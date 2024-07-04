@@ -24,7 +24,7 @@ async def on_ready():
 
 async def parse_participants(projects_name, discord_link):
     """Функция парсинга участников чата discord"""
-    print(f"Начало парсинга!")
+    print(f"Парсинг прошёл!")
     invite = await bot.fetch_invite(discord_link)
     guild_id = invite.guild.id
     guild = bot.get_guild(guild_id)
